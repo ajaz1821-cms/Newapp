@@ -1,0 +1,24 @@
+{
+  "entities": {
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification sent to students",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["assignment", "holiday", "general"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" },
+        "userId": { "type": "string" }
+      },
+      "required": ["title", "message", "type", "timestamp", "read", "userId"]
+    }
+  },
+  "firestore": {
+    "notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Collection of student notifications"
+    }
+  }
+}

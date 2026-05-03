@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'message', 'type', 'timestamp', 'read', 'userId']) 
+        && data.keys().size() == 6
+        && data.title is string && data.title.size() <= 200
+        && data.message is string && data.message.size() <= 1000
+        && data.type in ['assignment', 'holiday', 'general']
+        && data.timestamp is timestamp
+        && data.read is bool
+        && data.userId is string;
+    }
+
+    match /notifications/{notificationId} {
+      // Students can read their own notifications
+      // For this demo, we'll allow listing if the userId matches or if it's a global notification
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all');
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all');
+      
+      // Students can update the 'read' status of their notifications
+      allow update: if isSignedIn() 
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read is bool;
+
+      // Only admins (simulated here or for system use) should create/delete
+      // For demo purposes, we might need a way to trigger these
+      allow create: if isSignedIn(); // In a real app, this would be restricted to teachers/admins
+    }
+  }
+}
